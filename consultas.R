@@ -42,6 +42,7 @@ selectQuery2 <- "
 
 consulta2 <-dbGetQuery(storiesDb,selectQuery2)
 
+#Lista el número de usuarios por estación que usan el servicio más de 300 segundos
 selectQuery3 <-"
 SELECT Usuarios, Origen_Id, Nombre, Longitude, Latitude FROM
 (
