@@ -34,5 +34,5 @@ p <- ggplot(viajes_x_y, aes(x=Num.viajes)) +
 
 p+ geom_vline(aes(xintercept=mean(Num.viajes)),
               color="blue", linetype="dashed", size=1)+
-  labs(title="Gráfico de densidad de viajes",x="Número de viajes", y = "Densidad")+
+  labs(title="Grafico de densidad de viajes",x="Numero de viajes", y = "Densidad")+
   theme_classic()
