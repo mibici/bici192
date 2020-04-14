@@ -6,7 +6,7 @@ storiesDb<-dbConnect(RMariaDB::MariaDB(),user=userDB, password=passwordDB, host=
 dbListTables(storiesDb)
 
 #Queies transfromación y carga de datos en Modelo multidimensional
-#Transformación tabla viajes @Bisi_raw se inserta en tabla viaje @Bisi
+#Transformación datos tabla viajes @Bisi_raw se inserta en tabla viaje @Bisi
 query<-paste(
   "INSERT INTO Bisi.viaje
   SELECT 
@@ -22,6 +22,62 @@ query<-paste(
   ( CONVERT (SUBSTR(Inicio_del_viaje, 11 , 9 ),TIME))) Duracion_viaje
   FROM Bisi_raw.viajes;")
 
+
+dbRows<-dbExecute(storiesDb,query)
+dbRows
+
+
+#Transformación datos tabla climate @Bisi_raw se inserta en tabla climate @Bisi
+query<-paste(
+  "INSERT INTO bisi.climate
+  SELECT
+  CONCAT(SUBSTR(Fecha, 7 , 4 ), '-' ,SUBSTR(Fecha, 4 , 2 ), '-' ,SUBSTR(Fecha, 1 , 2 ),
+  SUBSTR(Hora, 1 , 2 )) AS climate_Id,
+  SUBSTR(Fecha, 1 , 10 ) AS Fecha, Hora, OZONO, PM10, UVI, TEM_EXT
+  FROM Bisi_raw.climate;")
+
+dbRows<-dbExecute(storiesDb,query)
+dbRows
+
+
+#Transformacion de datos de la table bisi_raw.estacion y se insertan en dimension bisi.estacion
+query<-paste(
+  "INSERT INTO Bisi.estacion
+  SELECT id, name, obcn, location, latitude, longitude, status
+  FROM Bisi_raw.estacion;")
+
+dbRows<-dbExecute(storiesDb,query)
+dbRows
+
+
+#Transformacion de datos de la table bisi_raw.viaje y se insertan en bisi.viaje
+query<-paste(
+  "INSERT INTO bisi.precios
+  SELECT CONCAT(Año, '-' , '0',Mes) Precio_Id,
+  AVG ( CASE WHEN Generico LIKE 'Autob%' then Precio_Promedio end ) AS Autobus,
+  AVG ( CASE WHEN Generico LIKE 'Colect%' then Precio_Promedio end ) AS Colectivo,
+  AVG ( CASE WHEN Generico LIKE '%alto octan%' then Precio_Promedio end ) AS Premium,
+  AVG ( CASE WHEN Generico LIKE '%bajo octan%' then Precio_Promedio end ) AS Magna,
+  AVG ( CASE WHEN Generico LIKE 'Metro%' then Precio_Promedio end ) AS Metro,
+  AVG ( CASE WHEN Generico LIKE 'Taxi%' then Precio_Promedio end ) AS Taxi
+  FROM bisi_raw.precios
+  GROUP BY Precio_Id;")
+
+dbRows<-dbExecute(storiesDb,query)
+dbRows
+
+#Carga de datos en modelo multidimensional @Bisi
+query<-paste(
+  "INSERT INTO Bisi.viajes
+  SELECT
+  SUM(SUBSTR(viaje.duracion_viaje, 1 , 2 )*3600+ SUBSTR(viaje.duracion_viaje, 4 , 2 )*60+ SUBSTR(viaje.duracion_viaje, 7 , 2 )) Total_Sec,
+  COUNT(viaje.Viaje_Id) Numero,
+  viaje.Origen_Id Estacion_Id,
+  CONCAT(STR_TO_DATE(viaje.Fecha,'%d/%m/%Y'), SUBSTR(viaje.Inicio_del_viaje, 12 , 2 )) AS Climate_Id,
+  CONCAT(SUBSTR(Fecha,7,4), '-' , SUBSTR(Fecha,4,2)) Precios_Id
+  FROM bisi.estacion, bisi.viaje
+  WHERE estacion.Estacion_Id = Viaje.Origen_Id
+  GROUP BY Estacion_Id, Climate_Id;")
 
 dbRows<-dbExecute(storiesDb,query)
 dbRows
