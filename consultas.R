@@ -62,5 +62,28 @@ ORDER BY Usuarios DESC"
 consulta3 <-dbGetQuery(storiesDb,selectQuery3)
 
 
+
+#Lista el contenido de la tabla de hechos incluyendo temperatura y precio de Taxi y Magna
+selectQuery4 <-"
+SELECT Total_Sec, Numero, `TEMP EXT` FROM
+(
+SELECT Total_Sec, Numero, A.Climate_Id, `TEMP EXT`, A.Precios_Id, A.Estacion_Id FROM
+(SELECT Total_Sec, Numero, Climate_Id, Precios_Id, Estacion_Id FROM
+Viajes
+GROUP BY Climate_Id) A
+JOIN
+(SELECT Climate_Id, `TEMP EXT` FROM
+Climate) B
+ON A.Climate_Id = B.Climate_Id
+ORDER BY A.Climate_Id ) C
+JOIN
+(SELECT Precios_Id, Magna, Taxi, Autobus FROM
+Precios) D
+ON C.Precios_Id = D.Precios_Id
+ORDER BY C.Climate_Id"
+
+consulta4 <-dbGetQuery(storiesDb,selectQuery4)
+
+
 # Desconexión de la base de datos
 dbDisconnect(storiesDb)

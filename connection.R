@@ -18,8 +18,24 @@ query<-paste(
   Fin_del_viaje, 
   Origen_Id,
   Destino_Id,
-  SUBTIME( CONVERT (SUBSTR(Fin_del_viaje, 11 , 9 ),TIME),
-  ( CONVERT (SUBSTR(Inicio_del_viaje, 11 , 9 ),TIME))) Duracion_viaje
+  #Formato 24 Horas
+
+  SUBTIME(
+	CONVERT(
+		CONCAT(
+			IF(SUBSTR(Fin_del_viaje, 21 , 4)='p. m' AND SUBSTR(Fin_del_viaje, 12 , 2)<12,SUBSTR(Fin_del_viaje,12,2)+12,
+				IF(SUBSTR(Fin_del_viaje, 21 , 4)='a. m' AND SUBSTR(Fin_del_viaje, 12 , 2)=12,SUBSTR(Fin_del_viaje,12,2)+12,SUBSTR(Fin_del_viaje,12,2)+24)),
+			SUBSTR(Fin_del_viaje,14,6)
+			), TIME
+		),
+	CONVERT(
+		CONCAT(
+			IF(SUBSTR(Inicio_del_viaje, 21 , 4)='p. m' AND SUBSTR(Inicio_del_viaje, 12 , 2)<12,SUBSTR(Inicio_del_viaje,12,2)+12,SUBSTR(Inicio_del_viaje,12,2)),
+			SUBSTR(Inicio_del_viaje,14,6)
+			), TIME
+		)
+  ) Duracion_viaje
+
   FROM Bisi_raw.viajes;")
 
 
@@ -50,7 +66,7 @@ dbRows<-dbExecute(storiesDb,query)
 dbRows
 
 
-#Transformacion de datos de la table bisi_raw.viaje y se insertan en bisi.viaje
+#Transformacion de datos de la table bisi_raw.precios y se insertan en bisi.precios
 query<-paste(
   "INSERT INTO Bisi.Precios
   SELECT CONCAT(Año, '-' , '0',Mes) Precio_Id,
@@ -66,14 +82,14 @@ query<-paste(
 dbRows<-dbExecute(storiesDb,query)
 dbRows
 
-#Carga de datos en modelo multidimensional @Bisi
+#Carga de datos en Tabla de hechos "Viajes" modelo multidimensional @Bisi
 query<-paste(
   "INSERT INTO Bisi.Viajes
   SELECT
   SUM(SUBSTR(Viaje.duracion_viaje, 1 , 2 )*3600+ SUBSTR(Viaje.duracion_viaje, 4 , 2 )*60+ SUBSTR(Viaje.duracion_viaje, 7 , 2 )) Total_Sec,
   COUNT(Viaje.Viaje_Id) Numero,
   Viaje.Origen_Id Estacion_Id,
-  CONCAT(STR_TO_DATE(Viaje.Fecha,'%d/%m/%Y'), SUBSTR(Viaje.Inicio_del_viaje, 12 , 2 )) AS Climate_Id,
+  CONCAT(STR_TO_DATE(Viaje.Fecha,'%d/%m/%Y'), IF(SUBSTR(Viaje.Inicio_del_viaje,21,4)= 'p. m' AND SUBSTR(Viaje.Inicio_del_viaje, 12 , 2 ) <12,SUBSTR(Viaje.Inicio_del_viaje, 12 , 2 )+12, SUBSTR(Viaje.Inicio_del_viaje, 12 , 2 ))) AS Climate_Id,
   CONCAT(SUBSTR(Fecha,7,4), '-' , SUBSTR(Fecha,4,2)) Precios_Id
   FROM Bisi.Estacion, Bisi.Viaje
   WHERE Estacion.Estacion_Id = Viaje.Origen_Id
