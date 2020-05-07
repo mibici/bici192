@@ -20,21 +20,37 @@ query<-paste(
   Destino_Id,
   #Formato 24 Horas
 
-  SUBTIME(
-	CONVERT(
-		CONCAT(
-			IF(SUBSTR(Fin_del_viaje, 21 , 4)='p. m' AND SUBSTR(Fin_del_viaje, 12 , 2)<12,SUBSTR(Fin_del_viaje,12,2)+12,
-				IF(SUBSTR(Fin_del_viaje, 21 , 4)='a. m' AND SUBSTR(Fin_del_viaje, 12 , 2)=12,SUBSTR(Fin_del_viaje,12,2)+12,SUBSTR(Fin_del_viaje,12,2)+24)),
-			SUBSTR(Fin_del_viaje,14,6)
-			), TIME
-		),
-	CONVERT(
-		CONCAT(
-			IF(SUBSTR(Inicio_del_viaje, 21 , 4)='p. m' AND SUBSTR(Inicio_del_viaje, 12 , 2)<12,SUBSTR(Inicio_del_viaje,12,2)+12,SUBSTR(Inicio_del_viaje,12,2)),
-			SUBSTR(Inicio_del_viaje,14,6)
-			), TIME
-		)
-  ) Duracion_viaje
+SUBTIME(
+CONVERT(
+CONCAT(
+(CASE
+WHEN(SUBSTR(Fin_del_viaje, 21 , 4)='p. m' AND SUBSTR(Fin_del_viaje, 12 , 2)<>12) THEN
+SUBSTR(Fin_del_viaje,12,2)+12+12*((SUBSTR(Fin_del_viaje,1,2)<>SUBSTR(Inicio_del_viaje,1,2))*2)
+WHEN(SUBSTR(Fin_del_viaje, 21 , 4)='a. m' AND SUBSTR(Fin_del_viaje, 12 , 2)= 0) THEN
+SUBSTR(Fin_del_viaje,12,2)+24
+WHEN(SUBSTR(Fin_del_viaje, 21 , 4)='a. m' AND SUBSTR(Fin_del_viaje, 12 , 2)= 12) THEN
+SUBSTR(Fin_del_viaje,12,2)+12
+ELSE(
+SUBSTR(Fin_del_viaje,12,2)+(24*(SUBSTR(Fin_del_viaje,1,2)<>SUBSTR(Inicio_del_viaje,1,2))))
+END),
+SUBSTR(Fin_del_viaje,14,6)),
+TIME),
+CONVERT(
+CONCAT(
+(CASE
+WHEN(SUBSTR(Inicio_del_viaje, 21 , 4)='p. m' AND SUBSTR(Inicio_del_viaje, 12 , 2)<>12) THEN
+SUBSTR(Inicio_del_viaje,12,2)+12
+WHEN(SUBSTR(Inicio_del_viaje, 21 , 4)='a. m' AND SUBSTR(Inicio_del_viaje, 12 , 2)= 0) THEN
+SUBSTR(Inicio_del_viaje,12,2)+24
+WHEN(SUBSTR(Inicio_del_viaje, 21 , 4)='a. m' AND SUBSTR(Inicio_del_viaje, 12 , 2)= 12) THEN
+SUBSTR(Inicio_del_viaje,12,2)+12
+ELSE(
+SUBSTR(Inicio_del_viaje,12,2))
+END),
+SUBSTR(Inicio_del_viaje,14,6)),
+TIME)
+)
+ Duracion_viaje
 
   FROM Bisi_raw.viajes;")
 

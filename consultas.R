@@ -85,5 +85,27 @@ ORDER BY C.Climate_Id"
 consulta4 <-dbGetQuery(storiesDb,selectQuery4)
 
 
+selectQuery5 <-"
+SELECT Total_Sec, Numero, C.Climate_Id, `TEMP EXT`, PM10, OZONO, C.Estacion_Id, Latitude, Longitude FROM
+    (SELECT Total_Sec, Numero, A.Climate_Id, `TEMP EXT`, PM10, OZONO, A.Estacion_Id FROM
+        (SELECT Total_Sec, Numero, Climate_Id, Estacion_Id FROM
+            Viajes
+            WHERE Total_Sec > 300
+            ) A
+        JOIN
+            (SELECT Climate_Id, `TEMP EXT`, PM10, OZONO FROM
+            Climate
+            FORCE INDEX (PRIMARY)
+            ) B
+        ON A.Climate_Id = B.Climate_Id
+    ) C
+    JOIN
+    (SELECT Estacion_Id, Latitude, Longitude FROM
+    Estacion) D
+ON C.Estacion_Id = D.Estacion_Id;
+"
+consulta5 <-dbGetQuery(storiesDb,selectQuery5)
+
+
 # Desconexión de la base de datos
 dbDisconnect(storiesDb)
