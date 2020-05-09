@@ -1,0 +1,43 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Generación de requisitos conexión a base de datos,
+claves,
+tablas base de datos 
+```{r}
+source('libraries.R')
+source('claves.R')
+source('tableLoading.R')
+```
+
+Usando la tabla de hechos encontrar las estaciones más usadas por tiempo de utilización.
+
+
+```{r}
+Viajes %>% 
+  as.data.frame() -> top10
+
+top10 %>%
+  mutate(Total_Sec = as.numeric(Total_Sec)) %>%
+  group_by(Estacion_Id) %>% 
+  summarise(Total_Sec = sum(Total_Sec)) %>%
+  ungroup() %>% 
+  arrange(desc(Total_Sec)) %>%
+  mutate(freq = Total_Sec/sum(Total_Sec)*100) -> aux
+
+top10 <-cbind(aux, cumfreq = cumsum(aux$freq))
+rm(aux)
+top10 %>% 
+  filter(cumfreq < 50)
+```
+
+Del resultado podemos obtener como 55 estaciones concentran la mitad de la actividad del sistema de mibici. 
+
+```{r}
+top10 %>% 
+  ggplot(aes(x=round(freq,2))) +
+  geom_histogram()
+```
+
